@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>STERLA - Integrated Mindmap + ChatGPT</title>
+<title>STERLA - Full Learning App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowchart/1.15.0/flowchart.min.js"></script>
 <style>
 :root{
   --black:#0b0b0d; --card:#111216; --light-blue:#84d2ff; --light-purple:#c2b3ff;
@@ -32,20 +34,9 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b0d 0%,#0f1
 .subject-card:hover{transform:translateY(-6px);box-shadow:0 18px 50px rgba(6,10,40,0.8)}
 .page{display:none}
 .page.active{display:block}
-.output-box{background:linear-gradient(180deg,#061022,#081428);padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.02);color:var(--white)}
-#mindmapContainer{background:linear-gradient(180deg,#071427,#02101a);border-radius:14px;padding:30px;min-height:600px;overflow:auto;border:1px solid rgba(255,255,255,0.03)}
-.flowchart{overflow-x:auto;display:flex;justify-content:center;align-items:center;min-height:500px;padding:20px}
-.flow-node{position:relative;display:inline-block;margin:20px;background:linear-gradient(135deg,#071f35,#0a2540);border:2px solid #84d2ff;border-radius:12px;padding:16px 20px;text-align:center;min-width:140px;box-shadow:0 8px 25px rgba(132,210,255,0.15);transition:all 0.3s ease;white-space:nowrap}
-.flow-node:hover{transform:translateY(-5px);box-shadow:0 15px 35px rgba(132,210,255,0.25)}
-.flow-node.start{background:linear-gradient(135deg,#3cd48b,#2eb67d);border-color:#3cd48b}
-.flow-node.process{background:linear-gradient(135deg,#84d2ff,#c2b3ff);border-color:#84d2ff;color:#001}
-.flow-node.decision{background:linear-gradient(135deg,#ff9f43,#ff8b00);border-color:#ff9f43}
-.flow-node.end{background:linear-gradient(135deg,#ff6b9d,#ff4d82);border-color:#ff6b9d}
-.flow-arrow{position:absolute;width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:20px solid #84d2ff;transform:translateX(-50%);z-index:10}
-.flow-arrow.right{left:100%;top:50%;transform:translate(10px,-50%) rotate(0deg)}
-.flow-arrow.down{top:100%;left:50%;transform:translate(-50%,10px) rotate(90deg)}
-.flow-node .title{font-weight:800;font-size:14px;margin-bottom:8px}
-.flow-node .points{font-size:12px;line-height:1.4}
+#diagramContainer{background:linear-gradient(180deg,#071427,#02101a);border-radius:14px;padding:20px;min-height:500px;border:1px solid rgba(255,255,255,0.03);margin-top:20px}
+#diagram{width:100%;height:500px}
+.output-box{background:linear-gradient(180deg,#061022,#081428);padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.02);color:var(--white);overflow:auto;max-height:400px}
 #chatBox{background:#061025;padding:12px;border-radius:12px;min-height:360px;max-height:520px;overflow:auto;border:1px solid rgba(255,255,255,0.02)}
 .chat-input{margin-top:12px;display:flex;gap:12px}
 .chat-input input{flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff}
@@ -108,7 +99,7 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b0d 0%,#0f1
     </section>
 
     <section id="subjectsPage" class="page">
-      <h3>Subjects</h3>
+      <h3>All Subjects</h3>
       <div class="subject-grid" id="subjectsList"></div>
     </section>
 
@@ -118,39 +109,36 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b0d 0%,#0f1
     </section>
 
     <section id="mindmapPage" class="page">
-      <h3>Topic Flowchart</h3>
+      <h3>Flowcharts - All Subjects</h3>
       <div style="margin-bottom:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <select id="mindmapTopicSelect" class="input" style="flex:1;min-width:200px">
-          <option value="">Select Grammar, Algebra, etc.</option>
+        <select id="mindmapTopicSelect" class="input" style="flex:1;min-width:250px">
+          <option value="">Select Any Subject/Topic</option>
         </select>
         <button class="btn" onclick="generateFlowchart()">Generate Flowchart</button>
       </div>
-      <div id="mindmapContainer" class="flowchart">
-        <div style="text-align:center;padding:60px;color:var(--muted);font-size:18px">
-          Select a topic → Generate Flowchart<br>
-          <small>Watch the step-by-step learning flow!</small>
+      <div id="diagramContainer">
+        <div id="diagram" style="text-align:center;padding:40px;color:var(--muted)">
+          Select topic → Generate Flowchart
         </div>
       </div>
     </section>
 
     <section id="quizPage" class="page">
       <h3>Quiz</h3>
-      <div id="quizOutput" class="output-box"></div>
+      <div id="quizOutput" class="output-box">Select a topic to start quiz</div>
     </section>
 
     <section id="wsPage" class="page">
       <h3>Worksheet</h3>
-      <div id="wsOutput" class="output-box"></div>
+      <div id="wsOutput" class="output-box">Select a topic to view worksheet</div>
     </section>
 
     <section id="homeworkPage" class="page">
-      <h3>Homework Submitter</h3>
-      <div style="background:linear-gradient(180deg,#061022,#081428);padding:24px;border-radius:16px;border:1px solid rgba(255,255,255,0.02);">
-        <textarea id="homeworkInput" rows="8" placeholder="Write your homework answers here..."></textarea>
-        <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <button class="btn" onclick="submitHomework()" style="flex:1;min-width:200px">Submit Homework</button>
-        </div>
-        <div id="homeworkMessage" style="margin-top:12px;padding:12px;border-radius:10px;display:none"></div>
+      <h3>Homework</h3>
+      <div class="output-box" style="padding:24px">
+        <textarea id="homeworkInput" rows="6" placeholder="Write homework answers..." style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;color:var(--white)"></textarea>
+        <button class="btn" onclick="submitHomework()" style="margin-top:12px">Submit Homework</button>
+        <div id="homeworkMessage"></div>
       </div>
     </section>
 
@@ -158,7 +146,7 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b0d 0%,#0f1
       <h3>AI Chat</h3>
       <div id="chatBox"></div>
       <div class="chat-input">
-        <input type="text" id="chatInput" placeholder="Ask a question..." />
+        <input type="text" id="chatInput" placeholder="Ask about any topic..." />
         <button onclick="sendMessage()">Send</button>
       </div>
     </section>
@@ -166,187 +154,875 @@ html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b0d 0%,#0f1
 </div>
 
 <script>
-// ========== GLOBALS ==========
-let userName = null, userRole = null;
-let selectedSubject = null, chosenTopic = null;
+// Subjects List
+const allSubjects = [
+  "Grammar","Formal Letter","Speech","Prose","Algebra","Linear Equations","Mensuration",
+  "Reproduction in Animals","Sound","Electricity","1857 Revolt","Resources","Judiciary",
+  "Vyakaran","Patra Lekhan","HTML","AI Basics","Shabd Roop","Dhatu Roop","French Grammar",
+  "Culture","Networks","Cybersecurity"
+];
 
-// ========== FLOWCHART DATA - STEP BY STEP LEARNING FLOW ==========
-const flowchartData = {
-  "Grammar": {
-    steps: [
-      {type: "start", title: "Grammar", points: "Master Language Rules"},
-      {type: "process", title: "Parts of Speech", points: "Noun•Verb•Adjective<br>Adverb•Pronoun"},
-      {type: "decision", title: "Sentence?", points: "Types→Decl•Interro<br>Exclam•Imperative"},
-      {type: "process", title: "Tenses", points: "Present•Past•Future<br>Perfect forms"},
-      {type: "end", title: "Mastered!", points: "Perfect sentences!"}
-    ]
-  },
-  "Formal Letter": {
-    steps: [
-      {type: "start", title: "Formal Letter", points: "Official Communication"},
-      {type: "process", title: "Sender Info", points: "Address•Date"},
-      {type: "process", title: "Receiver", points: "Address•Salutation"},
-      {type: "process", title: "Body", points: "Intro•Main•Conclusion"},
-      {type: "end", title: "Complete!", points: "Yours sincerely"}
-    ]
-  },
-  "Speech": {
-    steps: [
-      {type: "start", title: "Speech", points: "Public Speaking"},
-      {type: "process", title: "Opening", points: "Attention grabber"},
-      {type: "process", title: "Body", points: "Main points"},
-      {type: "decision", title: "Closing?", points: "Summary•Memorable end"},
-      {type: "end", title: "Delivered!", points: "Applause!"}
-    ]
-  },
-  "Algebra": {
-    steps: [
-      {type: "start", title: "Algebra", points: "Math with Variables"},
-      {type: "process", title: "Variables", points: "x, y, constants"},
-      {type: "process", title: "Equations", points: "Solve x+5=12"},
-      {type: "decision", title: "Simplify?", points: "Factor•Expand"},
-      {type: "end", title: "Solved!", points: "x=7"}
-    ]
-  },
-  "Linear Equations": {
-    steps: [
-      {type: "start", title: "Linear Eqs", points: "y=mx+c"},
-      {type: "process", title: "One Variable", points: "2x+3=7 → x=2"},
-      {type: "process", title: "Two Variables", points: "Substitution"},
-      {type: "decision", title: "Graph?", points: "Straight line"},
-      {type: "end", title: "Solutions!", points: "Complete!"}
-    ]
-  }
+// Quiz Bank - 10 unique questions per subject (samples)
+// QUIZ BANK - 10 UNIQUE MCQs PER SUBJECT
+const quizBank = {
+  "Grammar":[
+    {q:"Which is a noun?", options:["run","dog","quickly","beautiful"], answer:"dog"},
+    {q:"Identify verb", options:["is","happy","table","red"], answer:"is"},
+    {q:"Adjective purpose?", options:["describe nouns","action word","place","person"], answer:"describe nouns"},
+    {q:"Which is adverb?", options:["quickly","run","sun","beautiful"], answer:"quickly"},
+    {q:"Pronoun example?", options:["he","fast","apple","blue"], answer:"he"},
+    {q:"Article types?", options:["a, an, the","and, but, or","in, on, at","wow, oh"], answer:"a, an, the"},
+    {q:"Conjunction connects?", options:["words/clauses","nouns","verbs","adjectives"], answer:"words/clauses"},
+    {q:"Preposition shows?", options:["relationship","action","description","emotion"], answer:"relationship"},
+    {q:"Interjection example?", options:["wow","run","fast","he"], answer:"wow"},
+    {q:"Plural of child?", options:["childs","childrens","children","childes"], answer:"children"}
+  ],
+  "Formal Letter":[
+    {q:"Formal salutation?", options:["Dear Sir","Hey","Yo","Dude"], answer:"Dear Sir"},
+    {q:"Date position?", options:["top right","middle","bottom left","no date"], answer:"top right"},
+    {q:"Closing phrase?", options:["Yours sincerely","Bye","Cheers","See ya"], answer:"Yours sincerely"},
+    {q:"Slang allowed?", options:["Never","Always","Sometimes","Optional"], answer:"Never"},
+    {q:"Subject line position?", options:["below date","top","bottom","middle"], answer:"below date"},
+    {q:"Tone required?", options:["Polite","Casual","Angry","Funny"], answer:"Polite"},
+    {q:"Sender address?", options:["top left","bottom right","middle","no address"], answer:"top left"},
+    {q:"Receiver details?", options:["below sender","above sender","no receiver","middle"], answer:"below sender"},
+    {q:"Signature position?", options:["below closing","above closing","left side","no signature"], answer:"below closing"},
+    {q:"Formal letter purpose?", options:["official","chat","story","joke"], answer:"official"}
+  ],
+  "Speech":[
+    {q:"Speech opening?", options:["attention grabber","random fact","silence","joke"], answer:"attention grabber"},
+    {q:"Body contains?", options:["main points","only jokes","personal story","nothing"], answer:"main points"},
+    {q:"Conclusion should?", options:["summarize","start new topic","end abruptly","ignore"], answer:"summarize"},
+    {q:"Practice importance?", options:["essential","optional","never","sometimes"], answer:"essential"},
+    {q:"Eye contact helps?", options:["connect audience","look away","read paper","shout"], answer:"connect audience"},
+    {q:"Voice modulation?", options:["essential","optional","not needed","boring"], answer:"essential"},
+    {q:"Gestures should?", options:["support message","distract","stay still","wave randomly"], answer:"support message"},
+    {q:"Speech length ideal?", options:["5-10 mins","1 hour","30 seconds","2 hours"], answer:"5-10 mins"},
+    {q:"Audience analysis?", options:["important","ignore","optional","never"], answer:"important"},
+    {q:"Memorize completely?", options:["No","Yes","Half","None"], answer:"No"}
+  ],
+  "Prose":[
+    {q:"Prose vs poetry?", options:["no rhyme","rhyme","meter","stanzas"], answer:"no rhyme"},
+    {q:"Main elements?", options:["plot, theme","rhyme, meter","stanza, chorus","verse, refrain"], answer:"plot, theme"},
+    {q:"Fiction type?", options:["imaginary","true story","biography","history"], answer:"imaginary"},
+    {q:"Non-fiction?", options:["true events","imaginary","poetry","songs"], answer:"true events"},
+    {q:"Theme means?", options:["central idea","characters","setting","plot"], answer:"central idea"},
+    {q:"Plot structure?", options:["beginning-middle-end","random","circular","none"], answer:"beginning-middle-end"},
+    {q:"Characterization?", options:["character development","plot only","setting only","theme"], answer:"character development"},
+    {q:"Setting includes?", options:["time place","characters","plot","theme"], answer:"time place"},
+    {q:"Point of view?", options:["1st 3rd person","only 1st","only 3rd","no POV"], answer:"1st 3rd person"},
+    {q:"Climax position?", options:["story peak","beginning","end","middle"], answer:"story peak"}
+  ],
+  "Algebra":[
+    {q:"x+5=12, x=?", options:["7","17","5","12"], answer:"7"},
+    {q:"Variable means?", options:["unknown number","known number","constant","equation"], answer:"unknown number"},
+    {q:"2x=10, x=?", options:["5","20","2","10"], answer:"5"},
+    {q:"Equation balance?", options:["both sides equal","left bigger","right bigger","no balance"], answer:"both sides equal"},
+    {q:"Coefficient of x?", options:["number before variable","variable","constant","equation"], answer:"number before variable"},
+    {q:"Simplify 3x+2x?", options:["5x","6x","x","3x"], answer:"5x"},
+    {q:"Constant term?", options:["number only","variable","both","none"], answer:"number only"},
+    {q:"Like terms?", options:["same variable","different variables","constants","equations"], answer:"same variable"},
+    {q:"x² means?", options:["x times x","x plus x","x divide x","x minus x"], answer:"x times x"},
+    {q:"Zero property?", options:["x*0=0","x*0=x","0*x=x","none"], answer:"x*0=0"}
+  ],
+  "Linear Equations":[
+    {q:"One variable equation?", options:["2x=4","x+y=5","x²=9","xy=10"], answer:"2x=4"},
+    {q:"2x+3=7, x=?", options:["2","4","5","1"], answer:"2"},
+    {q:"Substitution method?", options:["replace variable","add equations","multiply","divide"], answer:"replace variable"},
+    {q:"Parallel lines?", options:["no solution","infinite","one solution","two"], answer:"no solution"},
+    {q:"Same slope different intercept?", options:["parallel","intersect","coincide","none"], answer:"parallel"},
+    {q:"Elimination method?", options:["add/subtract equations","replace","multiply only","divide"], answer:"add/subtract equations"},
+    {q:"x-intercept?", options:["y=0","x=0","both zero","none"], answer:"y=0"},
+    {q:"Slope formula?", options:["rise/run","run/rise","y/x","x/y"], answer:"rise/run"},
+    {q:"y=mx+c, m=?", options:["slope","intercept","constant","variable"], answer:"slope"},
+    {q:"Infinite solutions?", options:["same line","parallel","perpendicular","none"], answer:"same line"}
+  ],
+  "Mensuration":[
+    {q:"Rectangle area?", options:["l×b","l+b","l²","2(l+b)"], answer:"l×b"},
+    {q:"Circle area?", options:["πr²","2πr","πd","πr"], answer:"πr²"},
+    {q:"Cube volume?", options:["a³","a²","6a²","12a"], answer:"a³"},
+    {q:"Cylinder volume?", options:["πr²h","2πrh","πr²","πd²h"], answer:"πr²h"},
+    {q:"Triangle area?", options:["½bh","bh","b+h","b²"], answer:"½bh"},
+    {q:"Sphere volume?", options:["4/3πr³","4πr²","2/3πr³","πr³"], answer:"4/3πr³"},
+    {q:"Perimeter square?", options:["4a","2a","a²","a"], answer:"4a"},
+    {q:"Diagonal rectangle?", options:["√(l²+b²)","l+b","l-b","l/b"], answer:"√(l²+b²)"},
+    {q:"Surface cube?", options:["6a²","a³","12a","3a²"], answer:"6a²"},
+    {q:"Cone volume?", options:["⅓πr²h","πr²h","πr h","πrh"], answer:"⅓πr²h"}
+  ],
+  "Reproduction in Animals":[
+    {q:"Sexual reproduction needs?", options:["male female","single parent","spores","vegetative"], answer:"male female"},
+    {q:"Asexual example?", options:["binary fission","fertilization","egg","sperm"], answer:"binary fission"},
+    {q:"Fertilization types?", options:["internal external","only internal","only external","no types"], answer:"internal external"},
+    {q:"Oviparous animals?", options:["lay eggs","live birth","both","none"], answer:"lay eggs"},
+    {q:"Viviparous means?", options:["live birth","eggs","spores","fission"], answer:"live birth"},
+    {q:"Zygote becomes?", options:["embryo","adult","egg","sperm"], answer:"embryo"},
+    {q:"Budding example?", options:["hydra","humans","frogs","birds"], answer:"hydra"},
+    {q:"Binary fission in?", options:["amoeba","humans","dogs","cats"], answer:"amoeba"},
+    {q:"Metamorphosis example?", options:["frog","human","dog","cat"], answer:"frog"},
+    {q:"Placenta function?", options:["nourish embryo","protect","move","breathe"], answer:"nourish embryo"}
+  ],
+  "Sound":[
+    {q:"Sound produced by?", options:["vibration","light","heat","electricity"], answer:"vibration"},
+    {q:"Sound nature?", options:["longitudinal waves","transverse","both","none"], answer:"longitudinal waves"},
+    {q:"Speed in air?", options:["340 m/s","300 m/s","1500 m/s","500 m/s"], answer:"340 m/s"},
+    {q:"Pitch depends on?", options:["frequency","amplitude","wavelength","speed"], answer:"frequency"},
+    {q:"Loudness depends?", options:["amplitude","frequency","speed","wavelength"], answer:"amplitude"},
+    {q:"Echo needs?", options:["large distance","small room","no obstacle","vacuum"], answer:"large distance"},
+    {q:"SONAR uses?", options:["echoes","light","heat","magnetic"], answer:"echoes"},
+    {q:"Ultrasound frequency?", options:[">20kHz","<20Hz","20-20kHz","0Hz"], answer:">20kHz"},
+    {q:"Sound travels best?", options:["solids","liquids","gases","vacuum"], answer:"solids"},
+    {q:"Musical sound?", options:["regular vibration","irregular","no vibration","random"], answer:"regular vibration"}
+  ],
+  "Electricity":[
+    {q:"V=IR, V=?", options:["voltage","current","resistance","power"], answer:"voltage"},
+    {q:"Current unit?", options:["ampere","volt","ohm","watt"], answer:"ampere"},
+    {q:"Series circuit?", options:["one path","multiple paths","no path","parallel"], answer:"one path"},
+    {q:"Parallel advantage?", options:["one fails others work","all fail together","same current","high resistance"], answer:"one fails others work"},
+    {q:"Ohm's law?", options:["V=IR","I=VR","R=VI","V=R/I"], answer:"V=IR"},
+    {q:"Fuse protects?", options:["overload","undervoltage","short circuit only","none"], answer:"overload"},
+    {q:"Electric power?", options:["P=VI","P=V/R","P=I/R","P=IR"], answer:"P=VI"},
+    {q:"1 kWh=?", options:["1000 Wh","100 Wh","10 Wh","1 Wh"], answer:"1000 Wh"},
+    {q:"Insulator example?", options:["rubber","copper","iron","silver"], answer:"rubber"},
+    {q:"Conductor example?", options:["copper","plastic","wood","glass"], answer:"copper"}
+  ],
+  "1857 Revolt":[
+    {q:"First soldier?", options:["Mangal Pandey","Rani Laxmibai","Bahadur Shah","Nana Saheb"], answer:"Mangal Pandey"},
+    {q:"Main cause?", options:["greased cartridges","taxes","land","religion"], answer:"greased cartridges"},
+    {q:"Queen's leader?", options:["Rani Laxmibai","Mangal Pandey","Bahadur Shah","Tatya Tope"], answer:"Rani Laxmibai"},
+    {q:"Last Mughal?", options:["Bahadur Shah","Akbar","Shah Jahan","Aurangzeb"], answer:"Bahadur Shah"},
+    {q:"Doctrine of Lapse?", options:["Dalhousie","Canning","Wellesley","Cornwallis"], answer:"Dalhousie"},
+    {q:"Kanpur leader?", options:["Nana Saheb","Rani Laxmibai","Mangal Pandey","Kunwar Singh"], answer:"Nana Saheb"},
+    {q:"Bihar leader?", options:["Kunwar Singh","Tatya Tope","Nana Saheb","Bahadur Shah"], answer:"Kunwar Singh"},
+    {q:"Revolt suppressed by?", options:["British army","Indian kings","French","Portuguese"], answer:"British army"},
+    {q:"Started at?", options:["Meerut","Delhi","Kanpur","Jhansi"], answer:"Meerut"},
+    {q:"First war of?", options:["Independence","Sepoy Mutiny","Rebellion","Uprising"], answer:"Independence"}
+  ],
+  "Resources":[
+    {q:"Renewable example?", options:["solar","coal","petroleum","natural gas"], answer:"solar"},
+    {q:"Non-renewable?", options:["coal","wind","water","solar"], answer:"coal"},
+    {q:"Exhaustible resources?", options:["finite quantity","infinite","renewable","both"], answer:"finite quantity"},
+    {q:"Sustainable development?", options:["future safe","only present","only past","none"], answer:"future safe"},
+    {q:"Natural resources?", options:["gifts of nature","man-made","both","none"], answer:"gifts of nature"},
+    {q:"Human resources?", options:["people","land","minerals","water"], answer:"people"},
+    {q:"Forest conservation?", options:["essential","optional","harmful","useless"], answer:"essential"},
+    {q:"Water conservation?", options:["important","ignore","waste","pollute"], answer:"important"},
+    {q:"Recycling reduces?", options:["waste","resources","pollution","all"], answer:"waste"},
+    {q:"Black gold?", options:["petroleum","coal","gold","diamond"], answer:"petroleum"}
+  ],
+  "Judiciary":[
+    {q:"Highest court?", options:["Supreme Court","High Court","District Court","Sessions Court"], answer:"Supreme Court"},
+    {q:"Independent judiciary?", options:["essential","optional","harmful","useless"], answer:"essential"},
+    {q:"PIL means?", options:["Public Interest Litigation","Private Interest","Public Information","none"], answer:"Public Interest Litigation"},
+    {q:"Judge appointment?", options:["President","PM","Governor","Chief Justice"], answer:"President"},
+    {q:"Fundamental Rights?", options:["protected by judiciary","ignored","optional","changed"], answer:"protected by judiciary"},
+    {q:"Lok Adalat?", options:["alternative dispute","Supreme Court","High Court","police"], answer:"alternative dispute"},
+    {q:"Contempt of court?", options:["punishable","allowed","optional","none"], answer:"punishable"},
+    {q:"Judicial review?", options:["check legislature","obey only","ignore laws","none"], answer:"check legislature"},
+    {q:"Equal justice?", options:["Article 14","Article 19","Article 21","Article 32"], answer:"Article 14"},
+    {q:"Public Prosecutor?", options:["government lawyer","private","judge","police"], answer:"government lawyer"}
+  ],
+  "Vyakaran":[
+    {q:"संधि प्रकार?", options:["स्वर व्यंजन विसर्ग","एक","तीन","चार"], answer:"स्वर व्यंजन विसर्ग"},
+    {q:"समास कितने?", options:["पांच","चार","छह","तीन"], answer:"पांच"},
+    {q:"कर्मधारय समास?", options:["रामस्य पुत्रः","गंगायां स्नानम्","नीलकमलम्","रघुपुंगवः"], answer:"नीलकमलम्"},
+    {q:"बहुव्रीहि उदाहरण?", options:["रघुपुंगवः","नीलकमलम्","गंगायां स्नानम्","रामस्य पुत्रः"], answer:"रघुपुंगवः"},
+    {q:"अवयव समास?", options:["गंगायां स्नानम्","नीलकमलम्","रघुपुंगवः","रामस्य पुत्रः"], answer:"गंगायां स्नानम्"},
+    {q:"तत्पुरुष समास?", options:["रामस्य पुत्रः","नीलकमलम्","रघुपुंगवः","गंगायां स्नानम्"], answer:"रामस्य पुत्रः"},
+    {q:"द्वंद्व समास?", options:["रामलक्ष्मणौ","रामस्य पुत्रः","नीलकमलम्","गंगायां स्नानम्"], answer:"रामलक्ष्मणौ"},
+    {q:"अलंकार कितने?", options:["अनेक","दो","चार","एक"], answer:"अनेक"},
+    {q:"अनुप्रास अलंकार?", options:["सितपदं पदं च","मधुर मधुर मधुर","चन्द्रमुखी","रक्त वर्णः"], answer:"सितपदं पदं च"},
+    {q:"उपमा अलंकार?", options:["चन्द्रमुखी","सितपदं पदं च","मधुर मधुर मधुर","रक्त वर्णः"], answer:"चन्द्रमुखी"}
+  ],
+  "Patra Lekhan":[
+    {q:"प्रेषक का स्थान?", options:["ऊपर बायें","नीचे दायें","मध्य","कोई नहीं"], answer:"ऊपर बायें"},
+    {q:"पत्र संकेतांक?", options:["तिथि के नीचे","तिथि के ऊपर","प्रेषक के नीचे","कोई नहीं"], answer:"तिथि के नीचे"},
+    {q:"आदरणीया?", options:["प्रिय मित्र","श्रीमान जी","महोदय","सखे"], answer:"महोदय"},
+    {q:"समापन?", options:["भवदीय","विदा","अलविदा","कोई नहीं"], answer:"भवदीय"},
+    {q:"विषयक पंक्ति?", options:["माध्यमिक","आवश्यक","महत्वपूर्ण","सभी"], answer:"माध्यमिक"},
+    {q:"अनौपचारिक पत्र?", options:["मित्र को","अधिकारी को","व्यवस्थापक को","संपादक को"], answer:"मित्र को"},
+    {q:"औपचारिक पत्र?", options:["संपादक को","मित्र को","भाई को","माता को"], answer:"संपादक को"},
+    {q:"शिकायत पत्र?", options:["प्रधानाचार्य को","मित्र को","भाई को","पिता को"], answer:"प्रधानाचार्य को"},
+    {q:"आवेदन पत्र?", options:["नौकरी हेतु","मित्र को","भाई को","कोई नहीं"], answer:"नौकरी हेतु"},
+    {q:"अनुमति पत्र?", options:["स्कूल प्राचार्य को","मित्र को","भाई को","पिता को"], answer:"स्कूल प्राचार्य को"}
+  ],
+  "HTML":[
+    {q:"HTML full form?", options:["Hyper Text Markup Language","High Text Markup Language","Hyper Transfer Markup Language","none"], answer:"Hyper Text Markup Language"},
+    {q:"DOCTYPE position?", options:["first line","last line","middle","optional"], answer:"first line"},
+    {q:"Head tag contains?", options:["metadata","content","links","images"], answer:"metadata"},
+    {q:"Body tag?", options:["visible content","metadata","styles","scripts"], answer:"visible content"},
+    {q:"Heading levels?", options:["h1-h6","h1-h4","h1-h3","only h1"], answer:"h1-h6"},
+    {q:"Paragraph tag?", options:["<p>","<para>","<text>","<div>"], answer:"<p>"},
+    {q:"Image tag?", options:["<img>","<image>","<pic>","<photo>"], answer:"<img>"},
+    {q:"Link tag?", options:["<a>","<link>","<url>","<href>"], answer:"<a>"},
+    {q:"List ordered?", options:["<ol>","<ul>","<li>","<list>"], answer:"<ol>"},
+    {q:"List unordered?", options:["<ul>","<ol>","<li>","<list>"], answer:"<ul>"}
+  ],
+  "AI Basics":[
+    {q:"AI full form?", options:["Artificial Intelligence","Auto Intelligence","Advanced Intelligence","Applied Intelligence"], answer:"Artificial Intelligence"},
+    {q:"Narrow AI example?", options:["Siri","human brain","general AI","super AI"], answer:"Siri"},
+    {q:"Machine Learning?", options:["AI subset","separate field","same as AI","opposite"], answer:"AI subset"},
+    {q:"Deep Learning?", options:["ML subset","AI subset","separate","hardware"], answer:"ML subset"},
+    {q:"Neural Network?", options:["brain inspired","random","simple math","rule based"], answer:"brain inspired"},
+    {q:"Training data?", options:["essential","optional","harmful","useless"], answer:"essential"},
+    {q:"Supervised learning?", options:["labeled data","unlabeled","no data","random"], answer:"labeled data"},
+    {q:"Unsupervised?", options:["unlabeled data","labeled","semi-labeled","no data"], answer:"unlabeled data"},
+    {q:"Reinforcement learning?", options:["reward based","data based","rule based","supervised"], answer:"reward based"},
+    {q:"AGI means?", options:["Artificial General Intelligence","Auto Generated Intelligence","Advanced Graphics Interface","none"], answer:"Artificial General Intelligence"}
+  ],
+  "Shabd Roop":[
+    {q:"प्रथमा विभक्ति?", options:["कर्ता","कर्म","करण","सम्प्रदान"], answer:"कर्ता"},
+    {q:"द्वितीया विभक्ति?", options:["कर्म","कर्ता","करण","सम्प्रदान"], answer:"कर्म"},
+    {q:"त्रतीया विभक्ति?", options:["करण","कर्ता","कर्म","सम्प्रदान"], answer:"करण"},
+    {q:"चतुर्थी विभक्ति?", options:["सम्प्रदान","कर्ता","कर्म","करण"], answer:"सम्प्रदान"},
+    {q:"पञ्चमी विभक्ति?", options:["अपादान","कर्ता","कर्म","सम्प्रदान"], answer:"अपादान"},
+    {q:"षष्ठी विभक्ति?", options:["सम्बन्ध","अपादान","कर्म","करण"], answer:"सम्बन्ध"},
+    {q:"सप्तमी विभक्ति?", options:["अधिकरण","सम्बन्ध","कर्म","करण"], answer:"अधिकरण"},
+    {q:"अष्टमी विभक्ति?", options:["संबोधन","अधिकरण","कर्म","करण"], answer:"संबोधन"},
+    {q:"एकवचन का प्रथमा?", options:["रामः","रामौ","रामाः","राम"], answer:"रामः"},
+    {q:"बहुवचन द्वितीया?", options:["रामान्","रामौ","रामाः","रामः"], answer:"रामान्"}
+  ],
+  "Dhatu Roop":[
+    {q:"धातु का अर्थ?", options:["क्रिया मूल","संज्ञा","सर्वनाम","विशेषण"], answer:"क्रिया मूल"},
+    {q:"वर्तमान काल?", options:["भवति","अभवत्","भविष्यति","लट् लकार"], answer:"भवति"},
+    {q:"भूतकाल उदाहरण?", options:["अभवत्","भवति","भविष्यति","लुङ्"], answer:"अभवत्"},
+    {q:"भविष्य काल?", options:["भविष्यति","भवति","अभवत्","लृट्"], answer:"भविष्यति"},
+    {q:"उत्तम पुरुष एकवचन?", options:["भवामि","भवसि","भवति","भवामः"], answer:"भवामि"},
+    {q:"मध्यम पुरुष?", options:["भवसि","भवामि","भवति","भवाथः"], answer:"भवसि"},
+    {q:"प्रथम पुरुष?", options:["भवति","भवसि","भवामि","भवामः"], answer:"भवति"},
+    {q:"लट् लकार?", options:["वर्तमान","भूत","भविष्य","आदेश"], answer:"वर्तमान"},
+    {q:"लुङ् लकार?", options:["भूतकाल","वर्तमान","भविष्य","आदेश"], answer:"भूतकाल"},
+    {q:"लृट् लकार?", options:["भविष्य","वर्तमान","भूत","आदेश"], answer:"भविष्य"}
+  ],
+  "French Grammar":[
+    {q:"French articles?", options:["le la les","un une des","both","none"], answer:"both"},
+    {q:"Masculine article?", options:["le","la","les","un"], answer:"le"},
+    {q:"Feminine article?", options:["la","le","les","une"], answer:"la"},
+    {q:"Plural definite?", options:["les","le","la","des"], answer:"les"},
+    {q:"Être means?", options:["to be","to have","to go","to eat"], answer:"to be"},
+    {q:"Avoir means?", options:["to have","to be","to go","to eat"], answer:"to have"},
+    {q:"Parler means?", options:["to speak","to eat","to go","to be"], answer:"to speak"},
+    {q:"Je suis?", options:["I am","you are","he is","we are"], answer:"I am"},
+    {q:"Tu as?", options:["you have","I have","he has","we have"], answer:"you have"},
+    {q:"Nous parlons?", options:["we speak","I speak","you speak","they speak"], answer:"we speak"}
+  ],
+  "Culture":[
+    {q:"Bastille Day?", options:["July 14","August 15","January 26","November 11"], answer:"July 14"},
+    {q:"French symbol?", options:["Eiffel Tower","Taj Mahal","Big Ben","Statue of Liberty"], answer:"Eiffel Tower"},
+    {q:"Cuisine famous?", options:["French","Indian","Chinese","Italian"], answer:"French"},
+    {q:"Famous museum?", options:["Louvre","British Museum","Smithsonian","Hermitage"], answer:"Louvre"},
+    {q:"French Revolution?", options:["1789","1776","1945","1917"], answer:"1789"},
+    {q:"National motto?", options:["Liberté Égalité Fraternité","In God We Trust","E Pluribus Unum","none"], answer:"Liberté Égalité Fraternité"},
+    {q:"Famous painting?", options:["Mona Lisa","Starry Night","Guernica","Scream"], answer:"Mona Lisa"},
+    {q:"Paris nickname?", options:["City of Light","Big Apple","Windy City","Sin City"], answer:"City of Light"},
+    {q:"French bread?", options:["Baguette","Naan","Pizza","Burger"], answer:"Baguette"},
+    {q:"Wine region?", options:["Bordeaux","Napa","Tuscany","Rioja"], answer:"Bordeaux"}
+  ],
+  "Networks":[
+    {q:"LAN stands?", options:["Local Area Network","Large Area Network","Long Area Network","none"], answer:"Local Area Network"},
+    {q:"WAN example?", options:["Internet","office network","home network","school"], answer:"Internet"},
+    {q:"Connects LANs?", options:["Router","Switch","Hub","Modem"], answer:"Router"},
+    {q:"Same network segment?", options:["Switch","Router","Firewall","Modem"], answer:"Switch"},
+    {q:"IP address purpose?", options:["device identification","data encryption","speed boost","none"], answer:"device identification"},
+    {q:"MAC address?", options:["hardware address","software address","IP address","email"], answer:"hardware address"},
+    {q:"OSI layers?", options:["7","5","10","3"], answer:"7"},
+    {q:"Physical layer?", options:["layer 1","layer 2","layer 3","layer 7"], answer:"layer 1"},
+    {q:"Network layer?", options:["layer 3","layer 1","layer 2","layer 4"], answer:"layer 3"},
+    {q:"TCP port 80?", options:["HTTP","HTTPS","FTP","SMTP"], answer:"HTTP"}
+  ],
+  "Cybersecurity":[
+    {q:"Phishing attacks?", options:["fake emails","virus","hardware","physical"], answer:"fake emails"},
+    {q:"Protection tool?", options:["Firewall","Mouse","Keyboard","Monitor"], answer:"Firewall"},
+    {q:"Virus spreads?", options:["executable files","text files","images","videos"], answer:"executable files"},
+    {q:"Strong password?", options:["12+ chars mixed","123456","password","abc"], answer:"12+ chars mixed"},
+    {q:"Encryption purpose?", options:["secure data","speed up","compress","none"], answer:"secure data"},
+    {q:"Two-factor?", options:["extra security","one factor","no security","hardware"], answer:"extra security"},
+    {q:"Malware types?", options:["virus trojan","hardware","physical","network"], answer:"virus trojan"},
+    {q:"Social engineering?", options:["human trickery","hardware hack","virus","firewall"], answer:"human trickery"},
+    {q:"VPN purpose?", options:["secure connection","speed boost","file sharing","none"], answer:"secure connection"},
+    {q:"Zero-day attack?", options:["unknown vulnerability","known fix","hardware","physical"], answer:"unknown vulnerability"}
+  ]
 };
 
-// ========== LOGIN ==========
+
+// Worksheet Bank - 5 distinct tasks
+const wsBank = {
+  "Grammar": [
+    "Write 10 nouns from your room",
+    "Make 5 sentences using verbs",
+    "Identify parts of speech in a newspaper paragraph",
+    "Create 5 adjectives from nouns",
+    "Join 5 sentences using conjunctions"
+  ],
+  "Formal Letter": [
+    "Write complaint letter to electricity board",
+    "Application for school leave",
+    "Letter to newspaper editor about pollution",
+    "Request letter to library for new books",
+    "Thank you letter to teacher"
+  ],
+  "Speech": [
+    "Prepare 3-minute speech on 'My Hobby'",
+    "Speech on 'Importance of Discipline'",
+    "Welcome speech for school function",
+    "Farewell speech for senior students",
+    "Speech on 'Save Water'"
+  ],
+  "Prose": [
+    "Write summary of your favorite story (100 words)",
+    "Character sketch of story hero (150 words)",
+    "Find 5 themes in any prose passage",
+    "Compare two characters from different stories",
+    "Write moral of 3 famous stories"
+  ],
+  "Algebra": [
+    "Solve 10 linear equations",
+    "Form 5 word problems for equations",
+    "Simplify 10 algebraic expressions",
+    "Factorize 8 quadratic expressions",
+    "Graph 5 linear equations"
+  ],
+  "Linear Equations": [
+    "Solve 5 pair of linear equations (substitution)",
+    "Solve 5 pairs (elimination method)",
+    "Form 5 word problems for simultaneous equations",
+    "Graphically verify 3 pairs of equations",
+    "Find ratio of solutions for 3 problems"
+  ],
+  "Mensuration": [
+    "Find area of school playground",
+    "Calculate volume of your water bottle",
+    "Measure surface area of room walls",
+    "Find perimeter of 3 classroom objects",
+    "Calculate cost of painting classroom"
+  ],
+  "Reproduction in Animals": [
+    "Draw labelled diagram of human reproductive system",
+    "Compare oviparous and viviparous animals (table)",
+    "Write life cycle of frog (6 stages)",
+    "List 10 asexual reproduction examples",
+    "Explain menstrual cycle (diagram)"
+  ],
+  "Sound": [
+    "Measure echo time in school corridor",
+    "Compare sound in different materials",
+    "Make musical instrument from household items",
+    "Record different animal sounds",
+    "Study Doppler effect with moving objects"
+  ],
+  "Electricity": [
+    "Make simple electric circuit",
+    "Measure resistance of 5 household wires",
+    "Calculate power of 5 home appliances",
+    "Draw series and parallel circuits",
+    "Verify Ohm's law experimentally"
+  ],
+  "1857 Revolt": [
+    "Timeline of 1857 revolt events",
+    "Biographies of 5 leaders (50 words each)",
+    "Map marking revolt centers",
+    "Compare 1857 vs 1942 revolt",
+    "Write causes in flowchart"
+  ],
+  "Resources": [
+    "List 20 renewable resources in locality",
+    "Water conservation plan for school",
+    "Waste segregation chart for home",
+    "Solar energy project model",
+    "Forest conservation poster"
+  ],
+  "Judiciary": [
+    "Visit local court, write report",
+    "Mock trial on simple case",
+    "Constitution articles matching game",
+    "Role play - judge, lawyer, witness",
+    "PIL draft on school issue"
+  ],
+  "Vyakaran": [
+    "५ संधि लिखें प्रत्येक प्रकार के",
+    "१० समास पहचानें वाक्यों में",
+    "५ अलंकार युक्त दोहे लिखें",
+    "कारक विग्रह १० शब्दों का",
+    "छंद पहचानें ५ कविताओं में"
+  ],
+  "Patra Lekhan": [
+    "नौकरी के लिए आवेदन पत्र",
+    "शिकायत पत्र बिजली विभाग को",
+    "संपादक को प्रदूषण पर पत्र",
+    "प्रार्थना पत्र १०वीं में प्रवेश हेतु",
+    "अनुमति पत्र पिकनिक हेतु"
+  ],
+  "HTML": [
+    "Create personal portfolio webpage",
+    "Make school timetable webpage",
+    "Design image gallery page",
+    "Create contact form page",
+    "Build responsive navigation menu"
+  ],
+  "AI Basics": [
+    "Train simple ML model (any dataset)",
+    "Create chatbot for school info",
+    "Image classification project",
+    "Predict student grades ML model",
+    "AI ethics presentation (10 slides)"
+  ],
+  "Shabd Roop": [
+    "राम के सम्पूर्ण शब्द रूप",
+    "गुरु के सम्पूर्ण शब्द रूप",
+    "५० शब्दों के प्रथमा-बहुवचन",
+    "कारक सारणी बनाएं १० नामों की",
+    "वाक्य शुद्धिकरण २० वाक्यों का"
+  ],
+  "Dhatu Roop": [
+    "भू धातु के सम्पूर्ण रूप",
+    "गम् धातु के लट् लकार",
+    "अस् धातु के लुङ् लकार",
+    "लट् लकार १० धातुओं के",
+    "वाक्य रचना धातु रूपों से"
+  ],
+  "French Grammar": [
+    "Write 10 sentences using articles",
+    "Conjugate 5 verbs (present tense)",
+    "Family tree with descriptions",
+    "Daily routine paragraph (50 words)",
+    "Describe your city (75 words)"
+  ],
+  "Culture": [
+    "French festival poster presentation",
+    "French cuisine recipe book",
+    "Famous French personalities (10)",
+    "French art gallery (photos+info)",
+    "Travel itinerary to France"
+  ],
+  "Networks": [
+    "Design home network diagram",
+    "IP addressing scheme for school",
+    "Packet tracer LAN simulation",
+    "WiFi security audit report",
+    "Subnetting practice worksheets"
+  ],
+  "Cybersecurity": [
+    "Password strength checker program",
+    "Phishing email identification quiz",
+    "Firewall configuration simulation",
+    "Encryption-decryption demo",
+    "Cybersecurity policy for school"
+  ]
+};
+
+// AI Chat Bank - conversation Q&A distinct from Quiz & Worksheet
+const aiBank = {
+  "Grammar": [
+    {q:"noun definition", a:"नाम है व्यक्ति, स्थान, वस्तु या भाव को दर्शाने वाला शब्द।"},
+    {q:"verb purpose", a:"क्रिया कार्य या अवस्था को दर्शाती है।"},
+    {q:"adjective explains", a:"विशेषण संज्ञा की विशेषता बताता है।"},
+    {q:"why conjunctions", a:"संधि शब्दों या वाक्यांशों को जोड़ती है।"},
+    {q:"pronoun usage", a:"सर्वनाम संज्ञा की जगह लेते हैं।"}
+  ],
+  "Formal Letter": [
+    {q:"formal letter structure", a:"प्रेषक, दिनांक, पत्र संकेतांक, विषय, मुख्य भाग, समापन।"},
+    {q:"salutation formal", a:"महोदय, आदरणीय श्रीमान, प्रिय मित्र (अनौपचारिक)।"},
+    {q:"closing phrases", a:"भवदीय, सादर, कृतज्ञ आदि।"},
+    {q:"tone required", a:"विनम्र, औपचारिक, स्पष्ट भाषा।"},
+    {q:"subject line purpose", a:"पत्र का मुख्य विषय संक्षेप में बताता है।"}
+  ],
+  "Speech": [
+    {q:"good speech structure", a:"आकर्षक शुरुआत, मुख्य बिंदु, प्रभावशाली समापन।"},
+    {q:"voice delivery tips", a:"स्पष्ट उच्चारण, उचित गति, जोरदार प्रस्तुति।"},
+    {q:"body language", a:"आँखों का संपर्क, हावभाव, स्थिर मुद्रा।"},
+    {q:"practice importance", a:"आत्मविश्वास और प्रवाह के लिए आवश्यक।"},
+    {q:"audience connection", a:"उनकी रुचि, भाषा और भावनाओं का ध्यान रखें।"}
+  ],
+  "Prose": [
+    {q:"prose elements", a:"कथानक, पात्र, भाव, भाषा शैली, संदेश।"},
+    {q:"theme importance", a:"रचना का केंद्रीय विचार या संदेश।"},
+    {q:"character development", a:"विभिन्न घटनाओं से पात्र का परिवर्तन।"},
+    {q:"setting role", a:"कथा का स्थान और समय वातावरण बनाता है।"},
+    {q:"point of view", a:"कथावाचक का दृष्टिकोण कहानी को प्रभावित करता है।"}
+  ],
+  "Algebra": [
+    {q:"algebra purpose", a:"अज्ञात राशियों को चिन्हों द्वारा हल करना।"},
+    {q:"equation solving", a:"दोनों पक्षों में समान क्रिया करके।"},
+    {q:"variables represent", a:"अज्ञात मान जो ज्ञात करना है।"},
+    {q:"coefficients meaning", a:"चर के साथ गुणनखंड।"},
+    {q:"simplification rules", a:"समान चरों को जोड़ना/घटाना।"}
+  ],
+  "Linear Equations": [
+    {q:"simultaneous equations", a:"दो समीकरणों से दो चरों के मान निकालना।"},
+    {q:"substitution method", a:"एक समीकरण से चर व्यक्त कर दूसरे में रखना।"},
+    {q:"elimination technique", a:"चर को समाप्त करने हेतु जोड़ना/घटाना।"},
+    {q:"graphical solution", a:"रेखाओं के काटने के बिंदु से।"},
+    {q:"consistent equations", a:"एक ही समाधान वाले समीकरण।"}
+  ],
+  "Mensuration": [
+    {q:"area formulas purpose", a:"समतल आकृतियों का क्षेत्रफल निकालना।"},
+    {q:"volume calculation", a:"त्रिविमीय वस्तुओं की आंतरिक क्षमता।"},
+    {q:"perimeter importance", a:"सीमावर्ती रेखा की लंबाई।"},
+    {q:"surface area", a:"बाहरी सतह का कुल क्षेत्रफल।"},
+    {q:"π value usage", a:"वृत्तीय आकृतियों के लिए स्थिरांक।"}
+  ],
+  "Reproduction in Animals": [
+    {q:"sexual reproduction", a:"नर मादा द्वारा संतति उत्पत्ति।"},
+    {q:"asexual reproduction", a:"एकल प्रजनक द्वारा संतति।"},
+    {q:"fertilization process", a:"शुक्राणु अंडाणु संयोग।"},
+    {q:"embryo development", a:"कलिकाकार से पूर्ण प्राणी तक।"},
+    {q:"metamorphosis stages", a:"अपूर्ण से पूर्ण रूपांतरण।"}
+  ],
+  "Sound": [
+    {q:"sound production", a:"कम्पन द्वारा ध्वनि तरंगें उत्पन्न।"},
+    {q:"pitch determination", a:"आवृत्ति पर निर्भर।"},
+    {q:"loudness factor", a:"तरंग परिमाप (amplitude)।"},
+    {q:"echo phenomenon", a:"परावर्तन द्वारा ध्वनि प्रतिध्वनि।"},
+    {q:"speed variation", a:"माध्यम के घनत्व पर निर्भर।"}
+  ],
+  "Electricity": [
+    {q:"electric current", a:"प्रोटॉनों का प्रवाह।"},
+    {q:"Ohm's law statement", a:"धारा प्रतिरोध के व्युत्क्रमानुपाती।"},
+    {q:"series combination", a:"एक पथ में धाराएँ।"},
+    {q:"parallel advantage", a:"एक उपकरण खराब होने पर अन्य कार्य करते।"},
+    {q:"power calculation", a:"VI = P सूत्र से।"}
+  ],
+  "1857 Revolt": [
+    {q:"major causes", a:"चिकनाई वाले कारतूस, डलहौजी नीतियाँ।"},
+    {q:"key leaders", a:"मंगल पांडे, रानी लक्ष्मीबाई, नाना साहब।"},
+    {q:"strategic centers", a:"मेरठ, दिल्ली, कानपुर, झाँसी।"},
+    {q:"British suppression", a:"सैन्य बल और कूटनीति से।"},
+    {q:"historical significance", a:"प्रथम स्वतंत्रता संग्राम का प्रारंभ।"}
+  ],
+  "Resources": [
+    {q:"renewable resources", a:"पुनः प्राप्त होने वाले प्राकृतिक साधन।"},
+    {q:"conservation importance", a:"भविष्य पीढ़ियों हेतु संरक्षण।"},
+    {q:"sustainable development", a:"वर्तमान आवश्यकता भविष्य क्षति न हो।"},
+    {q:"waste management", a:"पुनर्चक्रण, कम उपयोग, पुनः उपयोग।"},
+    {q:"water conservation", a:" वर्षा जल संचयन, न्यून उपयोग।"}
+  ],
+  "Judiciary": [
+    {q:"judicial independence", a:"कार्यपालिका से स्वतंत्र न्यामंडल।"},
+    {q:"fundamental rights protection", a:"नागरिक अधिकारों का संरक्षण।"},
+    {q:"judicial review power", a:"विधायिका की जाँच क्षमता।"},
+    {q:"PIL significance", a:"सार्वजनिक हित के मामले।"},
+    {q:"rule of law", a:"कानून के समक्ष सभी समान।"}
+  ],
+  "Vyakaran": [
+    {q:"संधि परिभाषा", a:"स्वरों का संयोग।"},
+    {q:"समास प्रकार", a:"तत्पुरुष, कर्मधारय, द्विगु, बहुव्रीहि, अव्ययीभाव।"},
+    {q:"अलंकार उद्देश्य", a:"काव्य में शोभा वृद्धि।"},
+    {q:"छंद महत्व", a:"काव्य लय संगीतमयता।"},
+    {q:"रस सिद्धांत", a:"भावनात्मक अनुभूति।"}
+  ],
+  "Patra Lekhan": [
+    {q:"औपचारिक पत्र संरचना", a:"प्रेषक, संकेतांक, विषय, मुख्य भाग, समापन।"},
+    {q:"अनौपचारिक पत्र", a:"परिवार मित्रों को स्नेहपूर्ण भाषा।"},
+    {q:"आवेदन पत्र", a:"नौकरी, प्रवेश हेतु औपचारिक।"},
+    {q:"शिकायत पत्र", a:"समस्या, कारण, समाधान मांग।"},
+    {q:"प्रार्थना पत्र", a:"अनुमति, सुविधा हेतु विनम्र।"}
+  ],
+  "HTML": [
+    {q:"semantic elements benefit", a:"खोज इंजन अनुकूलन, पहुंचनीयता।"},
+    {q:"responsive design", a:"विभिन्न उपकरणों पर अनुकूल दृश्य।"},
+    {q:"CSS integration", a:"आंतरिक, बाहरी, inline शैलियों।"},
+    {q:"JavaScript purpose", a:"गतिशीलता, उपयोगकर्ता अंतर्क्रिया।"},
+    {q:"accessibility standards", a:"विकलांग अनुकूल वेब डिजाइन।"}
+  ],
+  "AI Basics": [
+    {q:"machine learning process", a:"डेटा से स्वयं शिक्षण।"},
+    {q:"neural network structure", a:"न्यूरॉन्स की परतें।"},
+    {q:"supervised learning", a:"लेबल युक्त डेटा प्रशिक्षण।"},
+    {q:"AI ethics concerns", a:"गोपनीयता, नौकरी विस्थापन, पूर्वाग्रह।"},
+    {q:"future AI impact", a:"चिकित्सा, शिक्षा, परिवहन में क्रांति।"}
+  ],
+  "Shabd Roop": [
+    {q:"विभक्ति कार्य", a:"संज्ञा संबंध दर्शाना।"},
+    {q:"वचन भेद", a:"एकवचन, द्विवचन, बहुवचन।"},
+    {q:"लिंग प्रकार", a:"पुल्लिंग, स्त्रीलिंग।"},
+    {q:"कारक सिद्धांत", a:"क्रिया संबंध दर्शक।"},
+    {q:"शब्द रूप उपयोग", a:"वाक्य रचना में सटीकता।"}
+  ],
+  "Dhatu Roop": [
+    {q:"लकार भेद", a:"काल दर्शक - वर्तमान, भूत, भविष्य।"},
+    {q:"पुरुष भेद", a:"उत्तम, मध्यम, अन्य।"},
+    {q:"धातु वर्ग", a:"परस्मैपदी, आत्मनेपदी।"},
+    {q:"कृत प्रत्यय", a:"क्रिया से नामवाचक शब्द।"},
+    {q:"तद्धित प्रत्यय", a:"विशेषण निर्माण।"}
+  ],
+  "French Grammar": [
+    {q:"verb conjugation importance", a:"काल, पुरुष अनुसार रूप परिवर्तन।"},
+    {q:"gender agreement rules", a:"संज्ञा के अनुसार विशेषण लिंग।"},
+    {q:"number agreement", a:"वचन के अनुसार प्रत्यय परिवर्तन।"},
+    {q:"preposition usage", a:"स्थान, समय, कारण दर्शक।"},
+    {q:"pronoun placement", a:"क्रिया से पहले या बाद।"}
+  ],
+  "Culture": [
+    {q:"French cultural values", a:"स्वतंत्रता, समानता, भाईचारा।"},
+    {q:"artistic contributions", a:"चित्रकला, साहित्य, संगीत में अग्रणी।"},
+    {q:"culinary philosophy", a:"गुणवत्ता, ताजगी, प्रस्तुति।"},
+    {q:"historical influence", a:"क्रांति, दर्शन, विज्ञान।"},
+    {q:"modern lifestyle", a:"कार्य-जीवन संतुलन, खाद्य संस्कृति।"}
+  ],
+  "Networks": [
+    {q:"network topology types", a:"स्टार, बस, रिंग, मेश।"},
+    {q:"IP addressing scheme", a:"IPv4, IPv6, सार्वजनिक/निजी।"},
+    {q:"OSI model purpose", a:"नेटवर्क प्रक्रिया विभाजन।"},
+    {q:"TCP vs UDP", a:"TCP विश्वसनीय, UDP तीव्र।"},
+    {q:"wireless security protocols", a:"WPA3 सबसे सुरक्षित।"}
+  ],
+  "Cybersecurity": [
+    {q:"CIA triad", a:"गोपनीयता, अखंडता, उपलब्धता।"},
+    {q:"threat modeling", a:"जोखिम पहचान, मूल्यांकन, उपचार।"},
+    {q:"zero trust principle", a:"कोई भी विश्वास न करना।"},
+    {q:"incident response phases", a:"तैयारी, पहचान, निहितार्थ, पुनर्बहाली।"},
+    {q:"encryption algorithms", a:"AES, RSA, SHA सुरक्षित।"}
+  ]
+};
+
+// Flowchart Definitions - One per subject, structured as flowchart.js DSL string
+const flowchartDefinitions = {
+  "Grammar": `st=>start: Grammar\nps=>operation: Parts of Speech\nNoun→Verb→Adj→Adv\ntense=>operation: Tenses\nPresent→Past→Future\ne=>end: Mastered!\nst->ps->tense->e`,
+  "Formal Letter": `st=>start: Formal Letter\naddr=>operation: Sender Address\ndate=>operation: Date\nsub=>operation: Subject\nbody=>operation: Main Content\nclose=>operation: Yours sincerely\ne=>end: Complete!\nst->addr->date->sub->body->close->e`,
+  "Speech": `st=>start: Speech\nopen=>operation: Attention Grabber\nmain=>operation: 3 Main Points\nconc=>operation: Summary+Closing\nprac=>operation: Practice 3x\ne=>end: Delivered!\nst->open->main->conc->prac->e`,
+  "Prose": `st=>start: Prose\nplot=>operation: Plot Structure\ntheme=>operation: Central Theme\nchar=>operation: Characters\nsett=>operation: Setting\ne=>end: Analyzed!\nst->plot->theme->char->sett->e`,
+  "Algebra": `st=>start: Algebra\nid=>operation: Identify Variables\nform=>operation: Form Equation\nsimp=>operation: Simplify\nsolve=>operation: Isolate Variable\ne=>end: x=?\nst->id->form->simp->solve->e`,
+  "Linear Equations": `st=>start: Linear Equations\nmet=>condition: Method?\nsub(yes)=>operation: Substitution\neli(no)=>operation: Elimination\ncheck=>operation: Verify Solution\ne=>end: Solved!\nst->met\nmet(yes)->sub->check->e\nmet(no)->eli->check->e`,
+  "Mensuration": `st=>start: Mensuration\ntype=>condition: 2D or 3D?\narea(yes)=>operation: Area Formulas\nvol(no)=>operation: Volume Formulas\ne=>end: Calculated!\nst->type\ntype(yes)->area->e\ntype(no)->vol->e`,
+  "Reproduction in Animals": `st=>start: Reproduction\ntype=>condition: Sexual/Asexual?\nsex(yes)=>operation: Fertilization\nase(no)=>operation: Fission/Budding\ndevelop=>operation: Embryo Growth\ne=>end: Offspring!\nst->type\ntype(yes)->sex->develop->e\ntype(no)->ase->develop->e`,
+  "Sound": `st=>start: Sound\nvib=>operation: Vibration\nwave=>operation: Longitudinal Wave\nprop=>operation: Medium Propagation\nchar=>operation: Pitch/Loudness\ne=>end: Sound Properties!\nst->vib->wave->prop->char->e`,
+  "Electricity": `st=>start: Electricity\nohm=>operation: V=IR\ncirc=>condition: Series/Parallel?\nser(yes)=>operation: Current same\npar(no)=>operation: Voltage same\ne=>end: Circuit Solved!\nst->ohm->circ\ncirc(yes)->ser->e\ncirc(no)->par->e`,
+  "1857 Revolt": `st=>start: 1857 Revolt\ncause=>operation: Cartridges+Doctrine\nspark=>operation: Mangal Pandey\nspread=>operation: Meerut→Delhi\nlead=>operation: Rani+Nana\nend=>end: Suppressed\nst->cause->spark->spread->lead->end`,
+  "Resources": `st=>start: Resources\ntype=>condition: Renewable?\nren(yes)=>operation: Solar+Wind\nnon(no)=>operation: Coal+Oil\ncons=>operation: Conservation\nst->type\ntype(yes)->ren->cons->e\ntype(no)->non->cons->e`,
+  "Judiciary": `st=>start: Judiciary\nstr=>operation: Supreme→High→District\nrole=>operation: Law Interpretation\nright=>operation: Rights Protection\nind=>operation: Independence\ne=>end: Justice!\nst->str->role->right->ind->e`,
+  "Vyakaran": `st=>start: व्याकरण\nsandhi=>operation: स्वर+व्यंजन\nsamas=>operation: ५ समास प्रकार\nalankar=>operation: शब्दार्थ अलंकार\ne=>end: संस्कृत गुरु!\nst->sandhi->samas->alankar->e`,
+  "Patra Lekhan": `st=>start: पत्र लेखन\npres=>operation: प्रेषक पता\ndate=>operation: तिथि\nsub=>operation: पत्र संकेतांक\nbody=>operation: मुख्य विषय\nclose=>operation: भवदीय\ne=>end: पत्र सम्पूर्ण!\nst->pres->date->sub->body->close->e`,
+  "HTML": `st=>start: HTML\ndoc=>operation: DOCTYPE\nhead=>operation: <head> Metadata\nbody=>operation: <body> Content\ntags=>operation: Elements+Attributes\ne=>end: Webpage Ready!\nst->doc->head->body->tags->e`,
+  "AI Basics": `st=>start: AI Basics\ntype=>operation: Narrow→General→Super\nml=>operation: Machine Learning\ndl=>operation: Deep Learning\napp=>operation: Applications\ne=>end: AI Ready!\nst->type->ml->dl->app->e`,
+  "Shabd Roop": `st=>start: शब्द रूप\nvibhakti=>operation: ८ विभक्तियः\nvachan=>operation: एकवचन बहुवचन\nling=>operation: पुल्लिंग स्त्रीलिंग\ne=>end: रूपानि ज्ञातानि!\nst->vibhakti->vachan->ling->e`,
+  "Dhatu Roop": `st=>start: धातु रूप\nlakar=>operation: लट् लुङ् लृट्\npurush=>operation: उत्तम मध्यम अन्य\nvarga=>operation: परस्मैपदी आत्मनेपदी\ne=>end: धातुरूप सम्पूर्णम्!\nst->lakar->purush->varga->e`,
+  "French Grammar": `st=>start: Grammaire Française\nart=>operation: Articles le/la/les\nver=>operation: Verbes Être/Avoir\nconj=>operation: Conjugaison Présent\nsent=>operation: Phrases Simples\ne=>end: Parle Français!\nst->art->ver->conj->sent->e`,
+  "Culture": `st=>start: French Culture\nfood=>operation: Cuisine Française\nfest=>operation: Bastille Day\nart=>operation: Louvre+Eiffel\nhist=>operation: Revolution 1789\ne=>end: Culturé!\nst->food->fest->art->hist->e`,
+  "Networks": `st=>start: Networks\ntopo=>operation: LAN WAN MAN\ndev=>operation: Router Switch Hub\nprot=>operation: TCP/IP OSI\nsec=>operation: Firewall VPN\ne=>end: Connected!\nst->topo->dev->prot->sec->e`,
+  "Cybersecurity": `st=>start: Cybersecurity\nthreat=>operation: Virus Phishing\nprot=>operation: Antivirus Firewall\nenc=>operation: Encryption AES\nprac=>operation: 2FA Strong Password\ne=>end: Protected!\nst->threat->prot->enc->prac->e`
+};
+// Global variables
+let userName = null, userRole = null, chosenTopic = null;
+
+// Login logic
 function onLogin(guest=false){
-  const msg = document.getElementById('loginMessage');
-  msg.textContent='';
+  let msg = document.getElementById('loginMessage');
+  msg.textContent = '';
   if(!guest){
-    const role=document.getElementById('roleSelect').value;
-    if(!role){ msg.textContent='Select Student or Teacher'; return; }
-    userName=role+" User"; userRole=role;
-  } else { userName='Guest'; userRole='Guest'; }
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('appPage').style.display='flex';
-  document.getElementById('welcomeUser').innerText=userName;
+    let role = document.getElementById('roleSelect').value;
+    if(!role){ msg.textContent = 'Select Student or Teacher'; return; }
+    userName = role + " User"; userRole = role;
+  } else {
+    userName = 'Guest'; userRole = 'Guest';
+  }
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('appPage').style.display = 'flex';
+  document.getElementById('welcomeUser').textContent = userName;
   loadSubjects();
+  showToast(`Welcome ${userName}!`, 'success');
 }
 
-// ========== NAVIGATION ==========
+// Navigation handler
 function navigate(e){
-  document.querySelectorAll('#sidebar .nav-btn').forEach(b=>b.classList.remove('active'));
+  if(!e) return;
+  document.querySelectorAll('#sidebar .nav-btn').forEach(b => b.classList.remove('active'));
   e.currentTarget.classList.add('active');
-  const page=e.currentTarget.dataset.page;
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  let page = e.currentTarget.dataset.page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(page).classList.add('active');
-  if(page==='subjectsPage') loadSubjects();
-  if(page==='topicPage') renderTopics();
-  if(page==='mindmapPage') loadFlowchartTopics();
+  if(page === 'subjectsPage') loadSubjects();
+  else if(page === 'mindmapPage') loadFlowchartTopics();
+  else if(page === 'quizPage') loadQuiz();
+  else if(page === 'wsPage') loadWorksheet();
 }
 
-// ========== SUBJECTS & TOPICS ==========
-const subjects = ["Grammar","Formal Letter","Speech","Prose","Algebra","Linear Equations"];
-const subjectTopics = {"Grammar":["Grammar"],"Formal Letter":["Formal Letter"],"Speech":["Speech"],"Algebra":["Algebra"],"Linear Equations":["Linear Equations"],"Prose":["Prose"]};
-
+// Load Subjects buttons on two pages
 function loadSubjects(){
-  const quick=document.getElementById('subjectsQuick');
-  const list=document.getElementById('subjectsList');
-  quick.innerHTML=''; list.innerHTML='';
-  subjects.forEach(sub=>{
-    const btnQuick=document.createElement('button');
-    btnQuick.className='subject-card'; btnQuick.innerText=sub;
-    btnQuick.onclick=()=>selectSubject(sub); quick.appendChild(btnQuick);
-    const btnList=document.createElement('button');
-    btnList.className='subject-card'; btnList.innerText=sub;
-    btnList.onclick=()=>selectSubject(sub); list.appendChild(btnList);
+  let quick = document.getElementById('subjectsQuick');
+  let list = document.getElementById('subjectsList');
+  quick.innerHTML = ''; list.innerHTML = '';
+  allSubjects.forEach(sub => {
+    let btnQuick = document.createElement('button');
+    btnQuick.className = 'subject-card'; btnQuick.textContent = sub;
+    btnQuick.onclick = () => selectTopic(sub);
+    quick.appendChild(btnQuick);
+    
+    let btnList = document.createElement('button');
+    btnList.className = 'subject-card'; btnList.textContent = sub;
+    btnList.onclick = () => selectTopic(sub);
+    list.appendChild(btnList);
   });
 }
 
-function selectSubject(sub){
-  selectedSubject=sub; chosenTopic=subjectTopics[sub][0];
-  navigate({currentTarget:{dataset:{page:'topicPage'}}, preventDefault:()=>{}});
+// Select a topic and load relevant info
+function selectTopic(topic){
+  chosenTopic = topic;
+  showToast(`Selected topic: ${topic}`, 'success');
+  loadQuiz();
+  loadWorksheet();
 }
 
-function renderTopics(){
-  const container=document.getElementById('topicsList'); container.innerHTML='';
-  if(!selectedSubject) return;
-  subjectTopics[selectedSubject].forEach(t=>{
-    const btn=document.createElement('button'); btn.className='subject-card'; btn.innerText=t;
-    btn.onclick=()=>{ chosenTopic=t; };
-    container.appendChild(btn);
-  });
-}
-
-// ========== FLOWCHART - GUARANTEED WORKING ==========
+// Load flowchart topic selection dropdown
 function loadFlowchartTopics(){
-  const select = document.getElementById('mindmapTopicSelect');
-  select.innerHTML = '<option value="">Select a topic</option>';
-  Object.keys(flowchartData).forEach(topic => {
-    const option = document.createElement('option');
+  let select = document.getElementById('mindmapTopicSelect');
+  select.innerHTML = '<option value="">Select Any Subject/Topic</option>';
+  allSubjects.forEach(topic => {
+    let option = document.createElement('option');
     option.value = topic;
-    option.text = topic;
+    option.textContent = topic;
     select.appendChild(option);
   });
 }
 
+// Generate flowchart using flowchart.js
 function generateFlowchart(){
-  const topic = document.getElementById('mindmapTopicSelect').value;
-  const container = document.getElementById('mindmapContainer');
-  
-  if(!topic || !flowchartData[topic]){
-    showToast('Select Grammar, Algebra, Speech, etc. first!', 'error');
+  let topic = document.getElementById('mindmapTopicSelect').value || chosenTopic;
+  let container = document.getElementById('diagram');
+  if(!topic || !flowchartDefinitions[topic]){
+    showToast('Please select a valid subject/topic!', 'error');
     return;
   }
-  
-  const steps = flowchartData[topic].steps;
-  container.innerHTML = '';
-  
-  steps.forEach((step, index) => {
-    const node = document.createElement('div');
-    node.className = `flow-node ${step.type}`;
-    node.innerHTML = `
-      <div class="title">${step.title}</div>
-      <div class="points">${step.points}</div>
-    `;
-    
-    // Add arrows between nodes
-    if(index < steps.length - 1){
-      const arrow = document.createElement('div');
-      arrow.className = 'flow-arrow right';
-      node.appendChild(arrow);
-    }
-    
-    container.appendChild(node);
+  container.innerHTML = 'Generating flowchart...';
+  try {
+    let chart = flowchart.parse(flowchartDefinitions[topic]);
+    chart.drawSVG('diagram', {
+      'line-width': 3,
+      'line-length': 50,
+      'text-margin': 15,
+      'font-size': 14,
+      'font': 'Inter, sans-serif',
+      'font-color': '#ffffff',
+      'line-color': '#84d2ff',
+      'element-color': '#84d2ff',
+      'fill': '#071f35',
+      'yes-text': '✓',
+      'no-text': '✗',
+      'arrow-end': 'block',
+      'symbols': {
+        'start': {'font-color': '#3cd48b', 'element-color': '#3cd48b', 'fill': '#102b16'},
+        'end': {'font-color': '#ff6b9d', 'element-color': '#ff6b9d', 'fill': '#2b1019'}
+      },
+      'scale': 1
+    });
+    showToast(`Flowchart Generated for ${topic}`, 'success');
+  } catch(ex) {
+    console.error(ex);
+    showToast('Error generating flowchart', 'error');
+  }
+}
+
+// Load quiz for chosen topic
+function loadQuiz() {
+  let out = document.getElementById('quizOutput');
+  out.innerHTML = '';
+  if(!chosenTopic || !quizBank[chosenTopic]){
+    out.textContent = 'No quiz available for selected topic.';
+    return;
+  }
+  quizBank[chosenTopic].forEach((q, idx) => {
+    let div = document.createElement('div');
+    div.style.marginBottom = "10px";
+    let p = document.createElement('p');
+    p.textContent = (idx+1) + ". " + q.q;
+    div.appendChild(p);
+    q.options.forEach(opt => {
+      let btn = document.createElement('button');
+      btn.textContent = opt;
+      btn.style.marginRight = "8px";
+      btn.onclick = () => checkAnswer(idx, opt);
+      div.appendChild(btn);
+    });
+    out.appendChild(div);
   });
-  
-  showToast(`✅ ${topic} Flowchart Generated! Follow the steps →`, 'success');
 }
 
-// ========== OTHER FUNCTIONS (SIMPLIFIED) ==========
-function loadQuiz(){ document.getElementById('quizOutput').innerHTML='Quiz for '+chosenTopic; }
-function loadWorksheet(){ document.getElementById('wsOutput').innerHTML='Worksheet for '+chosenTopic; }
+function checkAnswer(idx, selected){
+  let correct = quizBank[chosenTopic][idx].answer;
+  showToast(selected === correct ? "✅ Correct!" : "❌ Wrong answer");
+}
+
+// Load worksheet for chosen topic
+function loadWorksheet() {
+  let out = document.getElementById('wsOutput');
+  if(!chosenTopic || !wsBank[chosenTopic]){
+    out.innerHTML = 'No worksheet available for selected topic.';
+    return;
+  }
+  out.innerHTML = '<ol>' + wsBank[chosenTopic].map(i => `<li>${i}</li>`).join('') + '</ol>';
+}
+
+// Homework submission
 function submitHomework(){
-  document.getElementById('homeworkMessage').innerHTML='✅ Homework Submitted!';
-  document.getElementById('homeworkMessage').style.cssText='background:rgba(60,212,139,0.2);color:#3cd48b;display:block;padding:12px;border-radius:10px;';
-  setTimeout(()=>document.getElementById('homeworkMessage').style.display='none', 2000);
-}
-function sendMessage(){
-  const input=document.getElementById('chatInput');
-  const chatBox=document.getElementById('chatBox');
-  let msg=input.value.trim(); if(!msg) return; input.value='';
-  chatBox.innerHTML+=`<div><b>You:</b> ${msg}</div><div><b>AI:</b> Great question!</div>`;
-  chatBox.scrollTop=chatBox.scrollHeight;
+  let ta = document.getElementById('homeworkInput');
+  let msg = document.getElementById('homeworkMessage');
+  if(ta.value.trim().length === 0){
+    msg.style.color = '#e55a5a';
+    msg.textContent = 'Please enter your homework before submitting.';
+    return;
+  }
+  msg.style.color = '#3cd48b';
+  msg.textContent = '✅ Homework submitted successfully!';
+  ta.value = '';
+  setTimeout(() => { msg.textContent = ''; }, 3000);
 }
 
-function showToast(msg,type='success'){
-  const t=document.createElement('div'); 
-  t.className='toast '+(type==='success'?'success':'error'); 
-  t.innerText=msg;
-  document.body.appendChild(t); 
-  setTimeout(()=>t.remove(),2500);
+// AI Chat handling
+function sendMessage(){
+  let input = document.getElementById('chatInput');
+  let chatBox = document.getElementById('chatBox');
+  let msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  chatBox.innerHTML += `<div><b>You:</b> ${msg}</div>`;
+  let reply = "Sorry, I do not know.";
+  if(chosenTopic && aiBank[chosenTopic]){
+    let matched = aiBank[chosenTopic].find(o => msg.toLowerCase().includes(o.q.toLowerCase()));
+    reply = matched ? matched.a : aiBank[chosenTopic][0].a;
+  }
+  chatBox.innerHTML += `<div><b>AI:</b> ${reply}</div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
+
+// Show toast message
+function showToast(msg, type='success'){
+  let t = document.createElement('div');
+  t.className = 'toast ' + (type === 'success' ? 'success' : 'error');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// AI chat bank distinct from quiz/ws
+const aiBank = {
+  "Grammar": [
+    {q:"noun", a:"A noun is a person, place, thing or idea."},
+    {q:"verb", a:"A verb represents an action or state."},
+    {q:"adjective", a:"Adjectives describe nouns."},
+    {q:"conjunction", a:"Conjunctions connect words or clauses."},
+    {q:"pronoun", a:"Pronouns replace nouns."}
+  ],
+  "Formal Letter": [
+    {q:"formal", a:"Formal letters use polite, professional language."},
+    {q:"date", a:"The date is usually top right."},
+    {q:"closing", a:"Common closings are Yours sincerely or Regards."},
+    {q:"salutation", a:"Use Dear Sir or Madam."},
+    {q:"content", a:"Keep it concise and clear."}
+  ],
+  "Speech": [
+    {q:"speech", a:"A speech is given to an audience to inform or persuade."},
+    {q:"opening", a:"Start with an attention grabber."},
+    {q:"body", a:"Present main points with examples."},
+    {q:"conclusion", a:"Sum up and end memorably."},
+    {q:"practice", a:"Practice to gain confidence."}
+  ],
+  // Add more as needed for other subjects...
+};
+
+// Populate subject grids etc on load
+window.onload = () => {
+  loadSubjects();
+};
+
 </script>
+
 </body>
 </html>
